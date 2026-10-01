@@ -1,4 +1,5 @@
 export type EmissionsMode = "default" | "verified";
+export type FxVolatilityMode = "official" | "manual";
 
 export type ScenarioInput = {
   quote_name: string;
@@ -14,7 +15,9 @@ export type ScenarioInput = {
   verified_emissions_intensity: number | null;
   verified_sefa_intensity: number | null;
   try_cost_exposure_rate: number;
+  fx_volatility_mode: FxVolatilityMode;
   fx_volatility_rate: number;
+  delivery_horizon_days: number;
   input_cost_volatility_rate: number;
   target_margin_rate: number;
   simulations: number;
@@ -72,6 +75,40 @@ export type ScenarioResult = {
   safe_floor_price_eur: number;
   recommended_buffer_eur: number;
   cbam: CbamAssessment;
+  fx: {
+    mode: FxVolatilityMode;
+    source_id: string;
+    source_title: string;
+    source_url: string;
+    catalog_version: string;
+    latest_observation_date: string;
+    latest_eur_try_mid: number;
+    observation_count: number;
+    delivery_horizon_days: number;
+    horizon_business_days: number;
+    ewma_decay: number;
+    daily_volatility_rate: number;
+    annualized_volatility_rate: number;
+    raw_horizon_volatility_rate: number;
+    calibration_multiplier: number;
+    model_volatility_rate: number;
+    applied_volatility_rate: number;
+    recent_20_business_day_change_rate: number;
+    backtest: {
+      forecast_count: number;
+      calibration_count: number;
+      holdout_count: number;
+      lookback_business_days: number;
+      horizon_business_days: number;
+      calibration_multiplier: number;
+      raw_coverage_80_rate: number;
+      raw_coverage_95_rate: number;
+      calibrated_coverage_80_rate: number;
+      calibrated_coverage_95_rate: number;
+      mean_absolute_actual_return_rate: number;
+      mean_raw_forecast_volatility_rate: number;
+    };
+  };
   percentiles: Array<{
     percentile: 10 | 25 | 50 | 75 | 90;
     margin_eur: number;

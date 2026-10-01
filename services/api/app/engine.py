@@ -7,9 +7,11 @@ from statistics import mean
 from uuid import uuid4
 
 from .cbam import CbamCalculationInput, calculate_cbam_exposure
+from .fx import get_fx_assessment, sample_eur_try_change
 from .schemas import (
     CbamAssessment,
     CostContribution,
+    FxAssessment,
     HistogramBin,
     PercentilePoint,
     ScenarioInput,
@@ -61,19 +63,32 @@ def run_scenario(data: ScenarioInput) -> ScenarioResult:
         )
     )
     cbam = CbamAssessment.model_validate(cbam_payload)
+    fx = FxAssessment.model_validate(
+        get_fx_assessment(
+            data.fx_volatility_mode,
+            data.fx_volatility_rate,
+            data.delivery_horizon_days,
+        )
+    )
     random = Random(data.seed)
     margins: list[float] = []
     total_costs: list[float] = []
     cbam_costs: list[float] = []
 
     for _ in range(data.simulations):
-        fx_shock = random.gauss(0, data.fx_volatility_rate)
+        fx_shock = sample_eur_try_change(
+            random.gauss(0, 1), fx.applied_volatility_rate
+        )
         input_shock = random.gauss(0, data.input_cost_volatility_rate)
         carbon_shock = random.gauss(0, 0.12)
 
         exposed_cost = data.production_cost_eur * data.try_cost_exposure_rate
         euro_linked_cost = data.production_cost_eur - exposed_cost
-        shocked_local_cost = exposed_cost * max(0.55, 1 + input_shock - fx_shock)
+        shocked_local_cost = (
+            exposed_cost
+            * max(0.55, 1 + input_shock)
+            / max(0.4, 1 + fx_shock)
+        )
         shocked_euro_cost = euro_linked_cost * max(0.55, 1 + input_shock)
         production_cost = shocked_local_cost + shocked_euro_cost
 
@@ -132,13 +147,19 @@ def run_scenario(data: ScenarioInput) -> ScenarioResult:
         safe_floor_price_eur=round(safe_floor, 2),
         recommended_buffer_eur=round(recommended_buffer, 2),
         cbam=cbam,
+        fx=fx,
         percentiles=percentiles,
         histogram=_histogram(margins),
         contributions=contributions,
         assumptions=[
             "CBAM tabanı, seçilen dönem için yayımlanmış resmi sertifika fiyatını kullanır.",
             "Resmi varsayılan modunda Türkiye emisyon değeri ve Column B benchmark eşleştirilir.",
-            "Kur ve girdi maliyeti şokları normal dağılımla örneklenir.",
+            (
+                "Kur şoku, TCMB EUR/TRY serisinden kalibre edilen lognormal dağılımla örneklenir."
+                if data.fx_volatility_mode == "official"
+                else "Kur şoku, kullanıcının manuel oynaklık varsayımıyla lognormal dağılımdan örneklenir."
+            ),
+            "Girdi maliyeti şokları normal dağılımla örneklenir.",
             "Karbon fiyatı oynaklığı teklif riski için yüzde 12 kabul edilir.",
             "Sonuç karar desteğidir; resmi beyan veya hukuki görüş değildir.",
         ],

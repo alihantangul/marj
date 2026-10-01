@@ -40,6 +40,7 @@ import { buildScenarioCsv, reportFileName } from "@/lib/report";
 import type {
   DemoScenario,
   EmissionsMode,
+  FxVolatilityMode,
   ReferenceStatus,
   ScenarioInput,
   ScenarioResult,
@@ -282,6 +283,11 @@ export function ScenarioWorkspace() {
     setDirty(true);
   }
 
+  function setFxVolatilityMode(mode: FxVolatilityMode) {
+    setInput((current) => ({ ...current, fx_volatility_mode: mode }));
+    setDirty(true);
+  }
+
   async function runScenario() {
     setRunning(true);
     setError(null);
@@ -351,7 +357,15 @@ export function ScenarioWorkspace() {
   }
 
   function printPdfReport() {
+    const previousTitle = document.title;
     document.title = reportFileName(input, "pdf").replace(/\.pdf$/, "");
+    window.addEventListener(
+      "afterprint",
+      () => {
+        document.title = previousTitle;
+      },
+      { once: true }
+    );
     window.print();
   }
 
@@ -690,21 +704,56 @@ export function ScenarioWorkspace() {
               </div>
 
               <div className="control-pair">
+                <Select
+                  id="fx-mode"
+                  labelText="Kur modeli"
+                  value={input.fx_volatility_mode}
+                  onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                    setFxVolatilityMode(event.target.value as FxVolatilityMode)
+                  }
+                >
+                  <SelectItem value="official" text="TCMB kalibreli" />
+                  <SelectItem value="manual" text="Manuel varsayım" />
+                </Select>
                 <TextInput
-                  id="fx-volatility"
+                  id="delivery-horizon"
                   type="number"
-                  min="0"
-                  max="50"
-                  step="0.1"
-                  labelText="Kur oynaklığı (%)"
-                  value={input.fx_volatility_rate * 100}
+                  min="1"
+                  max="365"
+                  step="1"
+                  labelText="Teslime kalan gün"
+                  value={input.delivery_horizon_days}
                   onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                    updateNumber(
-                      "fx_volatility_rate",
-                      String(parseNumber(event.target.value, 0) / 100)
-                    )
+                    updateNumber("delivery_horizon_days", event.target.value)
                   }
                 />
+              </div>
+
+              <div className="control-pair">
+                {input.fx_volatility_mode === "manual" ? (
+                  <TextInput
+                    id="fx-volatility"
+                    type="number"
+                    min="0"
+                    max="50"
+                    step="0.1"
+                    labelText="Manuel kur oynaklığı (%)"
+                    value={input.fx_volatility_rate * 100}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                      updateNumber(
+                        "fx_volatility_rate",
+                        String(parseNumber(event.target.value, 0) / 100)
+                      )
+                    }
+                  />
+                ) : (
+                  <TextInput
+                    id="fx-model-volatility"
+                    labelText="Model oynaklığı (son hesap)"
+                    value={`${(result.fx.model_volatility_rate * 100).toFixed(2)}%`}
+                    readOnly
+                  />
+                )}
                 <TextInput
                   id="input-volatility"
                   type="number"
@@ -868,6 +917,7 @@ export function ScenarioWorkspace() {
                   <Tabs>
                     <TabList aria-label="Analiz ayrıntıları" contained>
                       <Tab>Fiyat özeti</Tab>
+                      <Tab>Kur modeli</Tab>
                       <Tab>Hesap izi</Tab>
                       <Tab>Veri kaynakları</Tab>
                       <Tab>Varsayımlar</Tab>
@@ -924,6 +974,65 @@ export function ScenarioWorkspace() {
                         </div>
                       </TabPanel>
                       <TabPanel>
+                        <div className="detail-content fx-model-content">
+                          <h2 className="print-only">EUR/TRY kur modeli</h2>
+                          <div className="fx-model-heading">
+                            <div>
+                              <span>Son resmi EUR/TRY orta kuru</span>
+                              <strong>
+                                {decimal.format(result.fx.latest_eur_try_mid)}
+                              </strong>
+                              <small>
+                                {formatDate(result.fx.latest_observation_date)} ·{" "}
+                                {result.fx.observation_count} gözlem
+                              </small>
+                            </div>
+                            <Tag type={result.fx.mode === "official" ? "green" : "gray"}>
+                              {result.fx.mode === "official"
+                                ? "TCMB modeli uygulandı"
+                                : "Manuel oynaklık uygulandı"}
+                            </Tag>
+                          </div>
+                          <div className="fx-model-grid">
+                            <div>
+                              <span>Uygulanan oynaklık</span>
+                              <strong>{percent.format(result.fx.applied_volatility_rate)}</strong>
+                              <small>{result.fx.delivery_horizon_days} takvim günü</small>
+                            </div>
+                            <div>
+                              <span>Ham EWMA tahmini</span>
+                              <strong>{percent.format(result.fx.raw_horizon_volatility_rate)}</strong>
+                              <small>λ {result.fx.ewma_decay.toFixed(2)}</small>
+                            </div>
+                            <div>
+                              <span>Kuyruk kalibrasyonu</span>
+                              <strong>{result.fx.calibration_multiplier.toFixed(2)}×</strong>
+                              <small>{result.fx.backtest.calibration_count} tahminle öğrenildi</small>
+                            </div>
+                            <div>
+                              <span>20 günlük kur değişimi</span>
+                              <strong>{percent.format(result.fx.recent_20_business_day_change_rate)}</strong>
+                              <small>Resmi iş günü gözlemleri</small>
+                            </div>
+                            <div>
+                              <span>Holdout %80 kapsama</span>
+                              <strong>{percent.format(result.fx.backtest.calibrated_coverage_80_rate)}</strong>
+                              <small>Ham {percent.format(result.fx.backtest.raw_coverage_80_rate)}</small>
+                            </div>
+                            <div>
+                              <span>Holdout %95 kapsama</span>
+                              <strong>{percent.format(result.fx.backtest.calibrated_coverage_95_rate)}</strong>
+                              <small>Ham {percent.format(result.fx.backtest.raw_coverage_95_rate)}</small>
+                            </div>
+                          </div>
+                          <p className="fx-model-note">
+                            İlk %70 dönem kalibrasyon, son %30 dönem bağımsız holdout olarak
+                            kullanılır. Kalibrasyon sonucu iyileştirir ancak gelecekte aynı
+                            kapsamayı garanti etmez.
+                          </p>
+                        </div>
+                      </TabPanel>
+                      <TabPanel>
                         <div className="detail-content table-scroll">
                           <h2 className="print-only">CBAM hesap izi</h2>
                           <table className="data-table trace-table">
@@ -961,6 +1070,29 @@ export function ScenarioWorkspace() {
                         <div className="detail-content">
                           <h2 className="print-only">Veri kaynakları</h2>
                           <div className="source-list">
+                            <div className="source-item">
+                              <div>
+                                <strong>{result.fx.source_title}</strong>
+                                <span>
+                                  Türkiye Cumhuriyet Merkez Bankası ·{" "}
+                                  {formatDate(result.fx.latest_observation_date)}
+                                </span>
+                              </div>
+                              <p>
+                                Resmi döviz alış ve satış değerlerinin aritmetik orta
+                                noktası; kur modeli ve geriye dönük test girdisi.
+                              </p>
+                              <Tag type="green">Resmi piyasa verisi</Tag>
+                              <a
+                                href={result.fx.source_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="TCMB kur arşivini aç"
+                                aria-label="TCMB kur arşivini aç"
+                              >
+                                <Launch size={16} />
+                              </a>
+                            </div>
                             {references.sources.map((source) => (
                               <div className="source-item" key={source.id}>
                                 <div>

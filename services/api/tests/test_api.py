@@ -11,6 +11,7 @@ def test_health_exposes_catalog_version() -> None:
 
     assert response.status_code == 200
     assert response.json()["catalog_version"] == "2026-08-10"
+    assert response.json()["fx_catalog_version"] == "2026-09-30"
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["x-frame-options"] == "DENY"
 
@@ -67,3 +68,17 @@ def test_cn_search_contract() -> None:
     body = response.json()
     assert body["catalog_version"] == "2026-08-10"
     assert len(body["candidates"]) == 3
+
+
+def test_eur_try_endpoint_exposes_model_and_holdout_metrics() -> None:
+    response = client.get(
+        "/v1/market-data/eur-try", params={"delivery_horizon_days": 60}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["source_id"] == "tcmb-eur-try"
+    assert body["latest_observation_date"] == "2026-09-30"
+    assert body["delivery_horizon_days"] == 60
+    assert body["applied_volatility_rate"] == body["model_volatility_rate"]
+    assert body["backtest"]["holdout_count"] >= 50

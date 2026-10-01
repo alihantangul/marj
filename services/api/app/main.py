@@ -5,10 +5,12 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from .engine import run_scenario
+from .fx import FxDataError, get_fx_assessment, get_fx_catalog
 from .reference import ReferenceDataError, get_catalog, normalize_cn_code
 from .schemas import (
     CnSearchResult,
     DemoScenario,
+    FxAssessment,
     ReferenceStatus,
     ScenarioInput,
     ScenarioResult,
@@ -27,7 +29,7 @@ ALLOWED_ORIGINS = _csv_environment(
 
 app = FastAPI(
     title="Marj Scenario API",
-    version="0.2.0",
+    version="0.3.0",
     description="İhracat teklifleri için kaynak izli marj ve CBAM risk motoru.",
 )
 
@@ -63,12 +65,16 @@ def demo_input() -> ScenarioInput:
         production_cost_eur=101_780,
         shipment_tonnes=84.6,
         try_cost_exposure_rate=0.62,
+        fx_volatility_mode="official",
         fx_volatility_rate=0.055,
+        delivery_horizon_days=60,
         input_cost_volatility_rate=0.038,
         target_margin_rate=0.12,
         simulations=2_500,
         seed=42,
     )
+
+
 def _reference_error(error: ReferenceDataError) -> HTTPException:
     return HTTPException(
         status_code=422,
@@ -85,6 +91,7 @@ def health() -> dict[str, str]:
         "status": "ok",
         "service": "marj-scenario-api",
         "catalog_version": get_catalog().catalog_version,
+        "fx_catalog_version": str(get_fx_catalog()["catalog_version"]),
     }
 
 
@@ -98,7 +105,19 @@ def get_demo_scenario() -> DemoScenario:
 def calculate_scenario(data: ScenarioInput) -> ScenarioResult:
     try:
         return run_scenario(data)
-    except ReferenceDataError as error:
+    except (ReferenceDataError, FxDataError) as error:
+        raise _reference_error(error) from error
+
+
+@app.get("/v1/market-data/eur-try", response_model=FxAssessment)
+def eur_try_market_data(
+    delivery_horizon_days: int = Query(default=60, ge=1, le=365),
+) -> FxAssessment:
+    try:
+        return FxAssessment.model_validate(
+            get_fx_assessment("official", 0, delivery_horizon_days)
+        )
+    except FxDataError as error:
         raise _reference_error(error) from error
 
 

@@ -8,6 +8,8 @@ Marj, AB'ye satış yapan Türk üreticilerin ihracat teklifini kur, girdi maliy
 
 - Next.js 16, React 19 ve IBM Carbon ile responsive teklif çalışma alanı
 - FastAPI tabanlı, seed ile tekrar üretilebilir Monte Carlo risk motoru
+- 371 resmi TCMB iş günü gözleminden üretilen, teslim ufkuna ölçeklenen EUR/TRY modeli
+- Kalibrasyon ve bağımsız holdout dönemlerini ayıran kur oynaklığı geriye dönük testi
 - Resmi varsayılan değer ve doğrulanmış tesis verisi olmak üzere iki emisyon yöntemi
 - Türkiye için 250 resmi varsayılan emisyon kaydı ve 1.804 benchmark satırı
 - CN kodunda en uzun önek eşleştirmesi ve üretim rotasına duyarlı Column B benchmark seçimi
@@ -32,7 +34,7 @@ Sertifika yükümlülüğü = max(0, brüt emisyon - serbest tahsis düzeltmesi)
 CBAM taban maliyeti = sertifika yükümlülüğü × resmi dönem fiyatı
 ```
 
-Monte Carlo katmanı üretim maliyetine kur ve girdi maliyeti şokları, sertifika fiyatına ise karbon fiyatı şoku uygular. Düzenleyici CBAM hesabı deterministiktir; belirsizlik bunun üzerinde ayrıca modellenir.
+Monte Carlo katmanı üretim maliyetine kur ve girdi maliyeti şokları, sertifika fiyatına ise karbon fiyatı şoku uygular. EUR/TRY şoku, resmi TCMB alış ve satış kurlarının orta noktasından hesaplanan EWMA oynaklığını teslim ufkuna ölçekler. Geçmiş tahminlerin ilk `%70` bölümü kuyruk kalibrasyonu, son `%30` bölümü bağımsız holdout ölçümü için kullanılır. Düzenleyici CBAM hesabı deterministiktir; belirsizlik bunun üzerinde ayrıca modellenir.
 
 Demo senaryosu, `72163211` CN kodunu Türkiye varsayılanı `7216` ve `(C)` üretim rotalı `72163211` Column B benchmark'ı ile eşleştirir.
 
@@ -47,6 +49,8 @@ Katalog sürümü: `2026-08-10`
 - 2026 CBAM faktörü: `%97,5`
 - 2026 CSCF: `1,0`, 14 Ağustos 2026 tarihli rehberde ön değer
 - Basitleştirilmiş eşik sinyali: dört ilgili sektörde AB ithalatçısının yıllık toplamı için 50 ton
+- EUR/TRY katalog sürümü: `2026-09-30`, 371 resmi iş günü gözlemi
+- Son TCMB EUR/TRY orta kuru: `55,606750`
 
 Q3 2026 fiyatı bu katalog tarihinde yayımlanmadığı için API bu dönem için tahmin üretmez ve yapılandırılmış `422` hatası döndürür.
 
@@ -105,6 +109,14 @@ Komut, çalışma kitaplarını `.reference-downloads/` altında tutar ve sürü
 
 Önceden indirilmiş dosyalarla yalnızca kataloğu yeniden üretmek için `--download` bayrağını kaldırın.
 
+TCMB kur kataloğunu resmi tarihli XML bültenlerinden yenilemek için:
+
+```powershell
+services\api\.venv\Scripts\python.exe scripts\update_fx_data.py
+```
+
+Komut varsayılan olarak son 550 takvim gününü tarar; hafta sonu ve bülten yayımlanmayan günleri atlar. Yalnızca `www.tcmb.gov.tr` üzerindeki HTTPS arşivine bağlanır, yanıt boyutunu sınırlar ve her gözlemin kaynak URL'siyle SHA-256 özetini `fx_catalog.json` içinde saklar. Yeniden üretilebilir sabit bir aralık için `--start YYYY-MM-DD --end YYYY-MM-DD` kullanılabilir.
+
 ## API
 
 | Yöntem | Uç | Amaç |
@@ -112,6 +124,7 @@ Komut, çalışma kitaplarını `.reference-downloads/` altında tutar ve sürü
 | `GET` | `/health` | Servis ve katalog sürümü |
 | `GET` | `/v1/scenarios/demo` | Kaynak izli demo senaryosu |
 | `POST` | `/v1/scenarios/run` | Teklif risk hesabı |
+| `GET` | `/v1/market-data/eur-try` | TCMB kur modeli, oynaklık ve holdout metrikleri |
 | `GET` | `/v1/reference-data/cn/{cn_code}` | CN, varsayılan değer ve benchmark eşleşmesi |
 | `GET` | `/v1/reference-data/search` | Ürün açıklaması veya kod öneki için CN adayları |
 | `GET` | `/v1/reference-data/status` | Katalog kapsamı ve kaynak metadatası |
@@ -129,7 +142,7 @@ cd ../../services/api
 .\.venv\Scripts\python.exe -m pip check
 ```
 
-Testler resmi varsayılan eşleşmesini, rotaya duyarlı benchmark seçimini, serbest tahsis düzeltmesini, doğrulanmış veri yöntemini, tekrarlanabilir simülasyonu ve yayımlanmamış dönem reddini kapsar.
+Testler resmi varsayılan eşleşmesini, rotaya duyarlı benchmark seçimini, serbest tahsis düzeltmesini, doğrulanmış veri yöntemini, tekrarlanabilir simülasyonu, yayımlanmamış dönem reddini, kur ufku ölçeklemesini ve holdout kalibrasyonunu kapsar.
 
 ## Mimari
 
@@ -137,10 +150,12 @@ Testler resmi varsayılan eşleşmesini, rotaya duyarlı benchmark seçimini, se
 apps/web                         Next.js ve Carbon kullanıcı arayüzü
 services/api/app/cbam.py         Deterministik düzenleyici hesap
 services/api/app/engine.py       Monte Carlo teklif risk motoru
+services/api/app/fx.py           TCMB kur modeli, kalibrasyon ve backtest
 services/api/app/reference.py    Sürümlü katalog ve CN eşleştirme
 services/api/app/reference_data  Uygulamaya alınan resmi veri anlık görüntüsü
 services/api/tests               Motor ve API sözleşme testleri
 scripts/update_reference_data.py Resmi veri indirme ve normalizasyon pipeline'ı
+scripts/update_fx_data.py        TCMB EUR/TRY snapshot pipeline'ı
 outputs/marj-feasibility.md       Ürün fizibilitesi ve kapsam kararları
 ```
 

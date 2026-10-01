@@ -38,6 +38,9 @@ def test_scenario_carries_regulatory_trace() -> None:
     assert result.model_status == "decision_support"
     assert result.cbam.catalog_version == "2026-08-10"
     assert result.cbam.selection.benchmark_column == "B"
+    assert result.fx.mode == "official"
+    assert result.fx.latest_observation_date == "2026-09-30"
+    assert result.fx.applied_volatility_rate == result.fx.model_volatility_rate
     assert {step.key for step in result.cbam.trace} == {
         "embedded_emissions",
         "sefa",

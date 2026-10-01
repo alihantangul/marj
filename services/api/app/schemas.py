@@ -17,7 +17,9 @@ class ScenarioInput(BaseModel):
     verified_emissions_intensity: float | None = Field(default=None, gt=0, le=50)
     verified_sefa_intensity: float | None = Field(default=None, ge=0, le=50)
     try_cost_exposure_rate: float = Field(ge=0, le=1)
+    fx_volatility_mode: Literal["official", "manual"] = "official"
     fx_volatility_rate: float = Field(ge=0, le=0.5)
+    delivery_horizon_days: int = Field(default=60, ge=1, le=365)
     input_cost_volatility_rate: float = Field(ge=0, le=0.5)
     target_margin_rate: float = Field(ge=0, le=0.8)
     simulations: int = Field(default=2_500, ge=500, le=20_000)
@@ -98,6 +100,43 @@ class CbamAssessment(BaseModel):
     trace: list[CalculationTraceStep]
 
 
+class FxBacktest(BaseModel):
+    forecast_count: int
+    calibration_count: int
+    holdout_count: int
+    lookback_business_days: int
+    horizon_business_days: int
+    calibration_multiplier: float
+    raw_coverage_80_rate: float
+    raw_coverage_95_rate: float
+    calibrated_coverage_80_rate: float
+    calibrated_coverage_95_rate: float
+    mean_absolute_actual_return_rate: float
+    mean_raw_forecast_volatility_rate: float
+
+
+class FxAssessment(BaseModel):
+    mode: Literal["official", "manual"]
+    source_id: str
+    source_title: str
+    source_url: str
+    catalog_version: str
+    latest_observation_date: str
+    latest_eur_try_mid: float
+    observation_count: int
+    delivery_horizon_days: int
+    horizon_business_days: int
+    ewma_decay: float
+    daily_volatility_rate: float
+    annualized_volatility_rate: float
+    raw_horizon_volatility_rate: float
+    calibration_multiplier: float
+    model_volatility_rate: float
+    applied_volatility_rate: float
+    recent_20_business_day_change_rate: float
+    backtest: FxBacktest
+
+
 class ScenarioResult(BaseModel):
     scenario_id: str
     generated_at: str
@@ -110,6 +149,7 @@ class ScenarioResult(BaseModel):
     safe_floor_price_eur: float
     recommended_buffer_eur: float
     cbam: CbamAssessment
+    fx: FxAssessment
     percentiles: list[PercentilePoint]
     histogram: list[HistogramBin]
     contributions: list[CostContribution]

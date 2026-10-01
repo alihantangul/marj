@@ -34,6 +34,8 @@ export function buildScenarioCsv(
     ["Girdi", "Teklif değeri", input.quote_value_eur, "EUR"],
     ["Girdi", "Üretim maliyeti", input.production_cost_eur, "EUR"],
     ["Girdi", "Sevkiyat", input.shipment_tonnes, "ton"],
+    ["Girdi", "Kur modeli", input.fx_volatility_mode, ""],
+    ["Girdi", "Teslim ufku", input.delivery_horizon_days, "takvim günü"],
     ["Sonuç", "Beklenen marj", result.expected_margin_eur, "EUR"],
     ["Sonuç", "Beklenen marj oranı", result.expected_margin_rate, "oran"],
     ["Sonuç", "P10 aşağı yönlü marj", result.downside_margin_eur, "EUR"],
@@ -71,7 +73,19 @@ export function buildScenarioCsv(
     ],
     ["CBAM", "Sertifika fiyatı", result.cbam.certificate_price_eur, "EUR"],
     ["CBAM", "Taban maliyet", result.cbam.estimated_cost_eur, "EUR"],
+    ["Kur", "TCMB EUR/TRY orta kuru", result.fx.latest_eur_try_mid, "TRY/EUR"],
+    ["Kur", "Son resmi gözlem", result.fx.latest_observation_date, ""],
+    ["Kur", "Uygulanan oynaklık", result.fx.applied_volatility_rate, "oran"],
+    ["Kur", "Ham EWMA oynaklığı", result.fx.raw_horizon_volatility_rate, "oran"],
+    ["Kur", "Kalibrasyon çarpanı", result.fx.calibration_multiplier, "çarpan"],
+    [
+      "Kur",
+      "Holdout %95 kapsama",
+      result.fx.backtest.calibrated_coverage_95_rate,
+      "oran",
+    ],
     ["Kaynak", "Katalog sürümü", references.catalog_version, ""],
+    ["Kaynak", "Kur kataloğu sürümü", result.fx.catalog_version, ""],
   ];
 
   for (const [index, step] of result.cbam.trace.entries()) {
@@ -91,6 +105,12 @@ export function buildScenarioCsv(
       `${source.published_on}; ${source.legal_basis}`,
     ]);
   }
+  rows.push([
+    "Kaynak",
+    result.fx.source_title,
+    result.fx.source_url,
+    `${result.fx.latest_observation_date}; ${result.fx.observation_count} gözlem`,
+  ]);
   rows.push([
     "Uyarı",
     "Kullanım sınırı",
