@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: marj-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerContext: ./services/api
+    dockerfilePath: ./services/api/Dockerfile
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: MARJ_ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: marj-web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+
+  - type: web
+    name: marj-web
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerContext: ./apps/web
+    dockerfilePath: ./apps/web/Dockerfile
+    healthCheckPath: /
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: marj-api
+          envVarKey: RENDER_EXTERNAL_HOSTNAME

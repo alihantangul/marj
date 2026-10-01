@@ -51,8 +51,11 @@ import type {
   ScenarioResult,
 } from "@/lib/types";
 import { QuoteImportModal } from "@/components/quote-import-modal";
+import { normalizeApiUrl } from "@/lib/api-url";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = normalizeApiUrl(
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+);
 
 const euro = new Intl.NumberFormat("tr-TR", {
   style: "currency",

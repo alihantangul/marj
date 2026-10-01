@@ -1,9 +1,14 @@
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.main import _normalize_origin, app
 
 
 client = TestClient(app)
+
+
+def test_deployment_hostname_is_normalized_to_https_origin() -> None:
+    assert _normalize_origin("marj-web.onrender.com/") == "https://marj-web.onrender.com"
+    assert _normalize_origin("http://localhost:3000/") == "http://localhost:3000"
 
 
 def test_health_exposes_catalog_version() -> None:

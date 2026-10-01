@@ -22,10 +22,18 @@ def _csv_environment(name: str, default: str) -> list[str]:
     return [value.strip() for value in os.getenv(name, default).split(",") if value.strip()]
 
 
+def _normalize_origin(value: str) -> str:
+    origin = value.strip().rstrip("/")
+    if origin.startswith(("http://", "https://")):
+        return origin
+    return f"https://{origin}"
+
+
 ALLOWED_ORIGINS = _csv_environment(
     "MARJ_ALLOWED_ORIGINS",
     "http://localhost:3000,http://127.0.0.1:3000",
 )
+ALLOWED_ORIGINS = [_normalize_origin(value) for value in ALLOWED_ORIGINS]
 
 app = FastAPI(
     title="Marj Scenario API",

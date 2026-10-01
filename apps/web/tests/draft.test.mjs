@@ -6,6 +6,7 @@ import {
   loadScenarioDraft,
   saveScenarioDraft,
 } from "../src/lib/draft.ts";
+import { normalizeApiUrl } from "../src/lib/api-url.ts";
 
 
 class MemoryStorage {
@@ -83,4 +84,13 @@ test("reset removes the local draft", () => {
   clearScenarioDraft();
 
   assert.equal(loadScenarioDraft(), null);
+});
+
+
+test("deployment hostnames are normalized to secure API URLs", () => {
+  assert.equal(
+    normalizeApiUrl("marj-api.onrender.com/"),
+    "https://marj-api.onrender.com"
+  );
+  assert.equal(normalizeApiUrl("http://localhost:8000"), "http://localhost:8000");
 });

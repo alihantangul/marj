@@ -98,6 +98,14 @@ Gerçek domainlerle deploy ederken:
 
 `.github/workflows/ci.yml`, her push ve pull request'te API testlerini, Python paket kontrolünü, web lint ve production build'ini, npm güvenlik denetimini ve iki Docker imajının build edilmesini zorunlu tutar.
 
+## Render Blueprint deployu
+
+Kök dizindeki `render.yaml`, `marj-web` ve `marj-api` servislerini Frankfurt bölgesinde iki ayrı Docker web servisi olarak tanımlar. Servisler birbirlerinin Render host adlarını build/runtime ortam değişkenleriyle alır; host adları uygulama içinde `https://` originlere normalleştirilir. Her iki servis de health check geçmeden trafiğe alınmaz ve ana dal deployu CI kontrollerinin geçmesini bekler.
+
+Blueprint varsayılan olarak Render'ın ücretsiz planını kullanır. Bu plan portföy demosu için uygundur ancak hareketsizlikte uykuya geçebildiğinden ilk istekte gecikme yaratabilir; kesintisiz üretim kullanımı için servis planları Blueprint üzerinden yükseltilmelidir.
+
+Canlı kurulum için önce depo GitHub, GitLab veya Bitbucket'a gönderilir, ardından Render Dashboard'da **New Blueprint** ile bu deponun kökündeki `render.yaml` seçilir. Blueprint doğrulaması hesap bağlantısı yapılmadan yerelde resmi Render şemasıyla; hesap bağlandıktan sonra `render blueprints validate render.yaml` ile semantik olarak tekrarlanır.
+
 ## Veri kataloğunu yenileme
 
 Pipeline yalnızca izin verilen `taxation-customs.ec.europa.eu` HTTPS alanından, kodda sabitlenmiş resmi çalışma kitabı URL'lerini indirir. İndirme 50 MB ile sınırlıdır; kısmi dosya başarılı aktarım tamamlanmadan kaynak dosyanın yerini alamaz.
