@@ -35,6 +35,11 @@ import {
 import type { CSSProperties, ChangeEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { demoFallback, demoInput, demoReferenceStatus } from "@/lib/demo";
+import {
+  clearScenarioDraft,
+  loadScenarioDraft,
+  saveScenarioDraft,
+} from "@/lib/draft";
 import type { ImportedQuoteLine } from "@/lib/local-import";
 import { buildScenarioCsv, reportFileName } from "@/lib/report";
 import type {
@@ -197,6 +202,8 @@ export function ScenarioWorkspace() {
   const [sourceMode, setSourceMode] = useState<"api" | "preview">("preview");
   const [dirty, setDirty] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -215,13 +222,21 @@ export function ScenarioWorkspace() {
         const scenario = (await scenarioResponse.json()) as DemoScenario;
         const referenceData =
           (await referenceResponse.json()) as ReferenceStatus;
-        setInput(scenario.input);
+        const localDraft = loadScenarioDraft();
+        setInput(localDraft ?? scenario.input);
         setResult(scenario.result);
         setReferences(referenceData);
         setSourceMode("api");
-        setDirty(false);
+        setDirty(Boolean(localDraft));
+        setDraftRestored(Boolean(localDraft));
       } catch (loadError) {
         if ((loadError as Error).name !== "AbortError") {
+          const localDraft = loadScenarioDraft();
+          if (localDraft) {
+            setInput(localDraft);
+            setDirty(true);
+            setDraftRestored(true);
+          }
           setError(
             "Hesaplama servisine ulaşılamadı. Arayüz, aynı resmi veri anlık görüntüsünü içeren yerel önizlemeyle açık."
           );
@@ -229,12 +244,17 @@ export function ScenarioWorkspace() {
         }
       } finally {
         setLoading(false);
+        setDraftReady(true);
       }
     }
 
     loadDemo();
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (draftReady && dirty) saveScenarioDraft(input);
+  }, [draftReady, dirty, input]);
 
   const negativeRiskTone = useMemo(() => {
     if (result.negative_margin_probability >= 0.1) return "negative";
@@ -313,10 +333,12 @@ export function ScenarioWorkspace() {
   }
 
   function resetScenario() {
+    clearScenarioDraft();
     setInput(demoInput);
     setResult(demoFallback.result);
     setError(null);
     setDirty(false);
+    setDraftRestored(false);
   }
 
   function applyImportedLine(line: ImportedQuoteLine, fileName: string) {
@@ -434,12 +456,25 @@ export function ScenarioWorkspace() {
               onClick={printPdfReport}
             />
             {dirty && <Tag type="warm-gray">Çalıştırılmamış değişiklik</Tag>}
+            {draftRestored && <Tag type="cool-gray">Cihazdaki taslak</Tag>}
             <Tag type={sourceMode === "api" ? "green" : "gray"}>
               {sourceMode === "api" ? "Resmi veri bağlı" : "Yerel önizleme"}
             </Tag>
             <Tag type="blue">Karar desteği</Tag>
           </div>
         </section>
+
+        {draftRestored && (
+          <InlineNotification
+            className="draft-notice"
+            kind="info"
+            title="Yerel taslak geri yüklendi"
+            subtitle="Yalnızca yapılandırılmış senaryo alanları bu cihazda saklandı; ham teklif dosyası kaydedilmedi. Sonuçları güncellemek için senaryoyu çalıştırın."
+            lowContrast
+            hideCloseButton={false}
+            onCloseButtonClick={() => setDraftRestored(false)}
+          />
+        )}
 
         <section className="metric-strip" aria-label="Senaryo özeti">
           <Metric

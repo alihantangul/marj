@@ -19,6 +19,7 @@ Marj, AB'ye satış yapan Türk üreticilerin ihracat teklifini kur, girdi maliy
 - Kaynak URL'si, yayın tarihi, hukuki dayanak ve SHA-256 kaydı içeren sürümlü veri kataloğu
 - API kapalı olduğunda açıkça işaretlenen yerel önizleme durumu
 - Ham dosyayı sunucuya göndermeyen CSV, XLSX ve metin PDF içe aktarma akışı
+- Ham dosyayı saklamadan yalnızca doğrulanmış senaryo alanlarını cihazda tutan yerel taslak
 - Ürün açıklaması veya kod önekiyle resmi katalogdan ilk üç CN adayı
 - CSV indirme ve tarayıcı üzerinden PDF/yazdırma raporu
 
@@ -77,7 +78,7 @@ python scripts/dev.py
 - API belgeleri: http://127.0.0.1:8000/docs
 - Sağlık kontrolü: http://127.0.0.1:8000/health
 
-`fixtures/sample-quote.csv` ve `fixtures/sample-quote.xlsx` dosyaları, arayüzdeki **Dosyadan başla** akışını müşteri verisi olmadan denemek için kullanılabilir. Dosya tarayıcıda ayrıştırılır; ham içerik API'ye yüklenmez.
+`fixtures/sample-quote.csv` ve `fixtures/sample-quote.xlsx` dosyaları, arayüzdeki **Dosyadan başla** akışını müşteri verisi olmadan denemek için kullanılabilir. Dosya tarayıcıda ayrıştırılır; ham içerik API'ye yüklenmez veya kalıcı depoya yazılmaz. Kullanıcının onayladığı yapılandırılmış senaryo alanları tarayıcının yerel depolamasında sürümlü taslak olarak tutulur; **Örnek değerlere dön** komutu taslağı temizler.
 
 ## Docker
 

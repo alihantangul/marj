@@ -78,6 +78,10 @@ body {
   background: var(--marj-surface);
 }
 
+.draft-notice {
+  margin: 1rem 1.5rem 0;
+}
+
 .workspace-eyebrow,
 .section-kicker {
   margin: 0 0 0.35rem;
@@ -1027,6 +1031,11 @@ body {
 
   .workspace-header {
     padding: 1.25rem 1rem;
+  }
+
+  .draft-notice {
+    margin-right: 1rem;
+    margin-left: 1rem;
   }
 
   .header-actions,
