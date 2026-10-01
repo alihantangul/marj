@@ -1,6 +1,6 @@
 {
   "catalog_version": "2026-09-30",
-  "generated_at": "2026-09-30T22:30:05.166615+00:00",
+  "generated_at": "2026-09-30T00:00:00+00:00",
   "series": "EUR/TRY indicative midpoint",
   "publisher": "Türkiye Cumhuriyet Merkez Bankası",
   "method": "Arithmetic midpoint of official indicative forex buying and selling rates",

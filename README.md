@@ -116,7 +116,9 @@ TCMB kur kataloğunu resmi tarihli XML bültenlerinden yenilemek için:
 services\api\.venv\Scripts\python.exe scripts\update_fx_data.py
 ```
 
-Komut varsayılan olarak son 550 takvim gününü tarar; hafta sonu ve bülten yayımlanmayan günleri atlar. Yalnızca `www.tcmb.gov.tr` üzerindeki HTTPS arşivine bağlanır, yanıt boyutunu sınırlar ve her gözlemin kaynak URL'siyle SHA-256 özetini `fx_catalog.json` içinde saklar. Yeniden üretilebilir sabit bir aralık için `--start YYYY-MM-DD --end YYYY-MM-DD` kullanılabilir.
+Komut varsayılan olarak son 550 takvim gününü kapsar; mevcut katalog varsa yalnızca son yedi günü ve yeni tarihleri yeniden indirir. Hafta sonu ve bülten yayımlanmayan günleri atlar. Yalnızca `www.tcmb.gov.tr` üzerindeki HTTPS arşivine bağlanır, yanıt boyutunu sınırlar ve her gözlemin kaynak URL'siyle SHA-256 özetini `fx_catalog.json` içinde saklar. Yeniden üretilebilir sabit bir aralık için `--start YYYY-MM-DD --end YYYY-MM-DD`, tüm aralığı baştan almak için `--full` kullanılabilir.
+
+`.github/workflows/reference-data.yml` bu komutu TCMB bülten saatinden sonra iş günlerinde çalıştırır. Katalog değiştiğinde doğrudan `main` dalına yazmak yerine otomasyon dalını günceller ve inceleme ile CI gerektiren bir pull request açar.
 
 ## API
 

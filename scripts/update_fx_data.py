@@ -72,12 +72,9 @@ def _parse_observation(body: bytes, url: str) -> dict[str, object]:
     }
 
 
-def build_catalog(start: date, end: date, delay_ms: int) -> dict[str, object]:
-    if start > end:
-        raise ValueError("Start date must not be after end date")
-    if (end - start).days > 1_100:
-        raise ValueError("A single update is limited to 1,100 calendar days")
-
+def _download_observations(
+    start: date, end: date, delay_ms: int
+) -> list[dict[str, object]]:
     observations: list[dict[str, object]] = []
     current = start
     while current <= end:
@@ -92,6 +89,33 @@ def build_catalog(start: date, end: date, delay_ms: int) -> dict[str, object]:
             if delay_ms:
                 time.sleep(delay_ms / 1_000)
         current += timedelta(days=1)
+    return observations
+
+
+def build_catalog(
+    start: date,
+    end: date,
+    delay_ms: int,
+    retained_observations: list[dict[str, object]] | None = None,
+    fetch_start: date | None = None,
+) -> dict[str, object]:
+    if start > end:
+        raise ValueError("Start date must not be after end date")
+    if (end - start).days > 1_100:
+        raise ValueError("A single update is limited to 1,100 calendar days")
+
+    first_fetch_date = fetch_start or start
+    if first_fetch_date < start or first_fetch_date > end:
+        raise ValueError("Fetch start must fall inside the catalog range")
+
+    merged = {
+        str(item["date"]): item
+        for item in (retained_observations or [])
+        if start.isoformat() <= str(item.get("date", "")) <= end.isoformat()
+    }
+    for observation in _download_observations(first_fetch_date, end, delay_ms):
+        merged[str(observation["date"])] = observation
+    observations = [merged[key] for key in sorted(merged)]
 
     if len(observations) < 180:
         raise RuntimeError(
@@ -100,7 +124,7 @@ def build_catalog(start: date, end: date, delay_ms: int) -> dict[str, object]:
 
     return {
         "catalog_version": observations[-1]["date"],
-        "generated_at": datetime.now(UTC).isoformat(),
+        "generated_at": f"{observations[-1]['date']}T00:00:00+00:00",
         "series": "EUR/TRY indicative midpoint",
         "publisher": "Türkiye Cumhuriyet Merkez Bankası",
         "method": "Arithmetic midpoint of official indicative forex buying and selling rates",
@@ -114,6 +138,31 @@ def _parse_date(value: str) -> date:
     return datetime.strptime(value, "%Y-%m-%d").date()
 
 
+def _incremental_state(
+    output: Path, start: date, end: date
+) -> tuple[list[dict[str, object]], date]:
+    if not output.exists():
+        return [], start
+
+    try:
+        payload = json.loads(output.read_text(encoding="utf-8"))
+        observations = payload["observations"]
+        if not isinstance(observations, list) or not observations:
+            return [], start
+        latest = _parse_date(str(observations[-1]["date"]))
+    except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+        return [], start
+
+    refresh_from = max(start, latest - timedelta(days=7))
+    retained = [
+        item
+        for item in observations
+        if start.isoformat() <= str(item.get("date", "")) < refresh_from.isoformat()
+        and str(item.get("date", "")) <= end.isoformat()
+    ]
+    return retained, refresh_from
+
+
 def main() -> None:
     today = datetime.now(UTC).date()
     parser = argparse.ArgumentParser(
@@ -123,10 +172,26 @@ def main() -> None:
     parser.add_argument("--end", type=_parse_date, default=today)
     parser.add_argument("--delay-ms", type=int, default=40)
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Ignore an existing catalog and fetch the complete requested range.",
+    )
     args = parser.parse_args()
 
-    catalog = build_catalog(args.start, args.end, max(0, args.delay_ms))
     output = args.output.resolve()
+    retained, fetch_start = (
+        ([], args.start)
+        if args.full
+        else _incremental_state(output, args.start, args.end)
+    )
+    catalog = build_catalog(
+        args.start,
+        args.end,
+        max(0, args.delay_ms),
+        retained,
+        fetch_start,
+    )
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(f"{output.suffix}.tmp")
     temporary.write_text(

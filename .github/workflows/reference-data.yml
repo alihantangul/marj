@@ -1,0 +1,58 @@
+name: Refresh TCMB reference data
+
+on:
+  schedule:
+    - cron: "20 15 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: tcmb-reference-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Refresh versioned TCMB snapshot
+        run: python scripts/update_fx_data.py --delay-ms 100
+      - name: Detect catalog change
+        id: diff
+        shell: bash
+        run: |
+          if git diff --quiet -- services/api/app/reference_data/fx_catalog.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open or update refresh pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          branch="automation/tcmb-fx-refresh"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add services/api/app/reference_data/fx_catalog.json
+          git commit -m "data: refresh TCMB EUR TRY snapshot"
+          git push --force origin "$branch"
+
+          existing_pr="$(gh pr list --head "$branch" --state open --json number --jq '.[0].number')"
+          if [ -z "$existing_pr" ]; then
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "data: refresh TCMB EUR/TRY snapshot" \
+              --body "Automated refresh from official dated TCMB exchange-rate bulletins. Review the catalog diff and CI results before merging."
+          fi
