@@ -13,8 +13,14 @@ __pycache__/
 pytest-cache-files-*/
 
 # Local configuration
-.env
-.env.local
+.env*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+credentials*.json
+secrets*.json
 *.log
 
 # Operating systems and editors
