@@ -1,11 +1,11 @@
 {
-  "catalog_version": "2026-09-30",
-  "generated_at": "2026-09-30T00:00:00+00:00",
+  "catalog_version": "2026-10-02",
+  "generated_at": "2026-10-02T00:00:00+00:00",
   "series": "EUR/TRY indicative midpoint",
   "publisher": "Türkiye Cumhuriyet Merkez Bankası",
   "method": "Arithmetic midpoint of official indicative forex buying and selling rates",
   "archive_index_url": "https://www.tcmb.gov.tr/kurlar/kurlar_tr.html",
-  "observation_count": 371,
+  "observation_count": 373,
   "observations": [
     {
       "date": "2025-04-02",
@@ -3345,6 +3345,24 @@
       "bulletin_no": "2026/184",
       "source_url": "https://www.tcmb.gov.tr/kurlar/202609/30092026.xml",
       "sha256": "9eac5b42ef2b022e47053f881e4bbddd065446d0f9e7e441bd05bfcefac6a028"
+    },
+    {
+      "date": "2026-10-01",
+      "forex_buying": 55.2967,
+      "forex_selling": 55.3963,
+      "mid": 55.3465,
+      "bulletin_no": "2026/185",
+      "source_url": "https://www.tcmb.gov.tr/kurlar/202610/01102026.xml",
+      "sha256": "c13b901be773d66e18a6088ab0f821d6e3b818c5961bbbe91a32e33c5dd08399"
+    },
+    {
+      "date": "2026-10-02",
+      "forex_buying": 55.0826,
+      "forex_selling": 55.1819,
+      "mid": 55.13225,
+      "bulletin_no": "2026/186",
+      "source_url": "https://www.tcmb.gov.tr/kurlar/202610/02102026.xml",
+      "sha256": "bfaa6d1b41cdb0ed7bbf0dfda3a5c940dd3c65be0a81a8e13bae6dedd889abf6"
     }
   ]
 }
