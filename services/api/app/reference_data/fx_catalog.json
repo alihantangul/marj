@@ -1,39 +1,12 @@
 {
-  "catalog_version": "2026-09-30",
-  "generated_at": "2026-09-30T00:00:00+00:00",
+  "catalog_version": "2026-10-09",
+  "generated_at": "2026-10-09T00:00:00+00:00",
   "series": "EUR/TRY indicative midpoint",
   "publisher": "Türkiye Cumhuriyet Merkez Bankası",
   "method": "Arithmetic midpoint of official indicative forex buying and selling rates",
   "archive_index_url": "https://www.tcmb.gov.tr/kurlar/kurlar_tr.html",
-  "observation_count": 371,
+  "observation_count": 375,
   "observations": [
-    {
-      "date": "2025-04-02",
-      "forex_buying": 40.8746,
-      "forex_selling": 40.9482,
-      "mid": 40.9114,
-      "bulletin_no": "2025/63",
-      "source_url": "https://www.tcmb.gov.tr/kurlar/202504/02042025.xml",
-      "sha256": "ca99abca28060d123aa0ae30530980b5d374d39cdbb0c12686614070585814ee"
-    },
-    {
-      "date": "2025-04-03",
-      "forex_buying": 41.74,
-      "forex_selling": 41.8152,
-      "mid": 41.7776,
-      "bulletin_no": "2025/64",
-      "source_url": "https://www.tcmb.gov.tr/kurlar/202504/03042025.xml",
-      "sha256": "5c8ada18713eb31006b69c477d0c16be3eba9e511dedd7cdc40f424a44731620"
-    },
-    {
-      "date": "2025-04-04",
-      "forex_buying": 41.7115,
-      "forex_selling": 41.7867,
-      "mid": 41.7491,
-      "bulletin_no": "2025/65",
-      "source_url": "https://www.tcmb.gov.tr/kurlar/202504/04042025.xml",
-      "sha256": "4e341203f22de30ba642840c878980799ed79b7c12e63d5b9bcbafb9f52d4f21"
-    },
     {
       "date": "2025-04-07",
       "forex_buying": 41.6552,
@@ -3345,6 +3318,69 @@
       "bulletin_no": "2026/184",
       "source_url": "https://www.tcmb.gov.tr/kurlar/202609/30092026.xml",
       "sha256": "9eac5b42ef2b022e47053f881e4bbddd065446d0f9e7e441bd05bfcefac6a028"
+    },
+    {
+      "date": "2026-10-01",
+      "forex_buying": 55.2967,
+      "forex_selling": 55.3963,
+      "mid": 55.3465,
+      "bulletin_no": "2026/185",
+      "source_url": "https://www.tcmb.gov.tr/kurlar/202610/01102026.xml",
+      "sha256": "c13b901be773d66e18a6088ab0f821d6e3b818c5961bbbe91a32e33c5dd08399"
+    },
+    {
+      "date": "2026-10-02",
+      "forex_buying": 55.0826,
+      "forex_selling": 55.1819,
+      "mid": 55.13225,
+      "bulletin_no": "2026/186",
+      "source_url": "https://www.tcmb.gov.tr/kurlar/202610/02102026.xml",
+      "sha256": "bfaa6d1b41cdb0ed7bbf0dfda3a5c940dd3c65be0a81a8e13bae6dedd889abf6"
+    },
+    {
+      "date": "2026-10-05",
+      "forex_buying": 54.9767,
+      "forex_selling": 55.0757,
+      "mid": 55.0262,
+      "bulletin_no": "2026/187",
+      "source_url": "https://www.tcmb.gov.tr/kurlar/202610/05102026.xml",
+      "sha256": "6b33f4bc67aee7fb5bc1d775c25d56ec9de09a2bd3f6f3afa449e17171d7ff95"
+    },
+    {
+      "date": "2026-10-06",
+      "forex_buying": 55.1853,
+      "forex_selling": 55.2847,
+      "mid": 55.235,
+      "bulletin_no": "2026/188",
+      "source_url": "https://www.tcmb.gov.tr/kurlar/202610/06102026.xml",
+      "sha256": "b015fa78a603108f3fb89e5b66559e8aa85096fc39966d685fdd93598498977d"
+    },
+    {
+      "date": "2026-10-07",
+      "forex_buying": 54.9907,
+      "forex_selling": 55.0898,
+      "mid": 55.04025,
+      "bulletin_no": "2026/189",
+      "source_url": "https://www.tcmb.gov.tr/kurlar/202610/07102026.xml",
+      "sha256": "ae2fc524a8db71847bbed70c92ea9600cf5331f3f805d5d40e41a1b1edc1ab32"
+    },
+    {
+      "date": "2026-10-08",
+      "forex_buying": 54.9548,
+      "forex_selling": 55.0538,
+      "mid": 55.0043,
+      "bulletin_no": "2026/190",
+      "source_url": "https://www.tcmb.gov.tr/kurlar/202610/08102026.xml",
+      "sha256": "c920f67abd067a9ddd55bba2f4d24660702320202de56789d6645e6cd8e6712f"
+    },
+    {
+      "date": "2026-10-09",
+      "forex_buying": 55.1112,
+      "forex_selling": 55.2105,
+      "mid": 55.16085,
+      "bulletin_no": "2026/191",
+      "source_url": "https://www.tcmb.gov.tr/kurlar/202610/09102026.xml",
+      "sha256": "a667a295a7d04cfb8b7ec60369fe27f0c58281675f436ec8aaeed6b087f1c1ca"
     }
   ]
 }
